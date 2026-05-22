@@ -1,0 +1,62 @@
+OPOD Agent - Linux (RHEL/CentOS/AlmaLinux) Installation Guide
+==========================================================
+
+1. Prepare System Base
+    sudo dnf update -y
+    sudo dnf install -y git unzip curl
+
+2. Install Apache + PHP (PHP 8.2 Recommended)
+    sudo dnf install -y epel-release
+    sudo dnf install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm
+    sudo dnf module reset php -y
+    sudo dnf module enable -y php:remi-8.2
+    sudo dnf install -y php php-cli php-common php-mbstring php-xml php-bcmath php-curl php-zip php-mysqlnd php-pdo php-tokenizer php-opcache
+
+3. Install Composer
+    cd /tmp
+    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    php composer-setup.php
+    sudo mv composer.phar /usr/local/bin/composer
+    composer --version
+
+4. Clone Project to /var/www/html/opod_agent
+    cd /var/www/html
+    sudo git clone https://github.com/xmodify/opod_agent.git
+    cd opod_agent
+
+5. Set Permissions for Apache
+    sudo chown -R apache:apache /var/www/html/opod_agent
+    sudo chmod -R 775 /var/www/html/opod_agent
+    sudo chmod -R 775 /var/www/html/opod_agent/storage
+    sudo chmod -R 775 /var/www/html/opod_agent/bootstrap/cache
+
+6. Install Laravel dependencies
+    sudo -u apache /usr/local/bin/composer install --no-dev --optimize-autoloader
+
+7. Setup .env file
+    sudo -u apache cp .env.example .env
+    sudo -u apache php artisan key:generate
+    # Configure your database in .env
+    sudo nano .env
+
+8. Update Project (Pull latest changes)
+    sudo -u apache git reset --hard
+    sudo -u apache git pull origin main
+    sudo -u apache /usr/local/bin/composer install --no-dev --optimize-autoloader
+    sudo -u apache php artisan migrate --force
+    sudo -u apache php artisan optimize:clear
+
+9. Start Apache
+    sudo systemctl enable httpd
+    sudo systemctl start httpd
+
+10. Node.js Setup (For UI/Vite assets):
+    sudo dnf module reset nodejs -y
+    sudo dnf module enable nodejs:20 -y
+    sudo dnf install -y nodejs
+    sudo -u apache npm install
+    sudo -u apache npm run build
+
+11. SELinux (Optional - if enabled)
+    sudo chcon -Rt httpd_sys_rw_content_t /var/www/html/opod_agent/storage
+    sudo chcon -Rt httpd_sys_rw_content_t /var/www/html/opod_agent/bootstrap/cache

@@ -1,0 +1,31 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Block access to hidden files and directories (starting with a dot), including .env
+    RewriteRule ^\. - [F,L]
+
+    # Block access to sensitive configuration and build files
+    RewriteRule ^(composer\.(json|lock)|package(-lock)?\.json|vite\.config\.js|phpunit\.xml|artisan|install(_linux)?\.txt)$ - [F,L]
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # If the request is for a file/folder that exists in the root (and not blocked above), serve it
+    RewriteCond %{REQUEST_FILENAME} -d [OR]
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    # If the request is for a file/folder that exists in the public directory, serve it
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteCond %{DOCUMENT_ROOT}/opod_agent/public/$1 -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/opod_agent/public/$1 -d
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # Otherwise, send the request to the root index.php
+    RewriteRule ^ index.php [L]
+</IfModule>

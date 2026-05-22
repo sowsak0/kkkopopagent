@@ -1,0 +1,67 @@
+OPOD Agent - Windows (XAMPP) Installation Guide
+===============================================
+
+1. Set Laravel Public Directory as Document Root
+    Edit C:\xampp\apache\conf\extra\httpd-vhosts.conf:
+
+    <VirtualHost *:82>
+        DocumentRoot "C:/xampp/htdocs/opod_agent/public" 
+        <Directory "C:/xampp/htdocs/opod_agent/public">
+            AllowOverride All
+            Require all granted
+        </Directory>
+    </VirtualHost>
+
+    # Disable directory browsing and set listen port
+    Edit C:\xampp\apache\conf\httpd.conf:
+        Options All -Indexes
+        Listen 82
+
+2. Enable mod_rewrite and Restart Apache
+    Ensure this line is uncommented in httpd.conf:
+    LoadModule rewrite_module modules/mod_rewrite.so
+
+3. Clone the repository (first time only)
+    git clone https://github.com/xmodify/opod_agent.git
+    cd opod_agent
+
+4. Pull latest changes (if already cloned)
+    git pull origin main
+
+5. Install PHP dependencies
+    composer install
+
+6. Setup Database
+    - Create a new database named `opod_agent` in MySQL.
+    - Ensure your HOSxP database is accessible.
+
+7. Setup your .env file
+    cp .env.example .env
+    # Edit .env and configure your database connections (DB_DATABASE, DB_DATABASE_2)
+
+8. Generate Key
+    php artisan key:generate
+
+9. Block Git Push (Local Safety)
+    9.1 Create pre-push file in .git/hooks/ folder:
+        (In PowerShell) New-Item -Path .git/hooks/pre-push -ItemType File
+    9.2 Add code to block push:
+        #!/bin/sh
+        echo "❌ git push ถูกบล็อกไว้ ห้าม push ไปยัง GitHub"
+        exit 1
+
+#################################################################
+Case: Update Laravel on XAMPP
+-----------------------------------------------------------------
+    composer install --no-dev --optimize-autoloader
+    composer dump-autoload -o
+    php artisan optimize:clear
+    php artisan migrate --force
+
+#################################################################
+Git Tips
+-----------------------------------------------------------------
+Merge remote changes:      git pull origin main --rebase
+Discard local changes:     git reset --hard && git pull origin main
+Overwrite remote (CAUTION): git push --force origin main
+#################################################################
